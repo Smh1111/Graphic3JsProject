@@ -26,7 +26,7 @@ This is a multiplayer 3D game project built from scratch using:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
+git clone https://github.com/Smh1111/Graphic3JsProject
 cd your-repo-name
 ```
 ### 2.  Install dependencies
