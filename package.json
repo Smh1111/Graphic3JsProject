@@ -1,0 +1,32 @@
+{
+  "name": "graphicproject",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "frontend-dev": "vite --host",
+    "backend-dev": "nodemon src/server/server.ts",
+    "dev": "concurrently --kill-others \"npm run frontend-dev\" \"npm run backend-dev\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "three": "^0.175.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/three": "^0.175.0",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.3"
+  }
+}
