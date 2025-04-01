@@ -1,0 +1,8 @@
+Model Information:
+* title:	Boxing Ring
+* source:	https://sketchfab.com/3d-models/boxing-ring-861f09ce71014e4baebeb79b2f99b1d2
+* author:	Bornx (https://sketchfab.com/bornx)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

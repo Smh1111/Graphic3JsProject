@@ -1,19 +1,40 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// === Scene, Camera, Renderer ===
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x222222);
 
-const dimension = 2000;
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(0, 100, 300);
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector(".webgl") as HTMLCanvasElement });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+
+// === Lighting ===
+scene.add(new THREE.AmbientLight(0xffffff, 1));
+const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+dirLight.position.set(100, 200, 100);
+scene.add(dirLight);
+
+// === Controls ===
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.zoomSpeed = 0.5;
+controls.panSpeed = 0.5;
+controls.target.set(0, 0, 0);
+
+// === World Bounds ===
 const worldBounds = {
-  minX: -dimension,
-  maxX: dimension,
-  minY: -dimension,
-  maxY: dimension,
-  minZ: -24,
-  maxZ: 25,
+  minX: -1500,
+  maxX: 1500,
+  minY: 0,
+  maxY: 500,
+  minZ: -1000,
+  maxZ: 1000,
 };
-
-
 
 function clampCameraToBounds() {
   camera.position.x = THREE.MathUtils.clamp(camera.position.x, worldBounds.minX, worldBounds.maxX);
@@ -21,200 +42,162 @@ function clampCameraToBounds() {
   camera.position.z = THREE.MathUtils.clamp(camera.position.z, worldBounds.minZ, worldBounds.maxZ);
 }
 
-// === KEYBOARD INPUT TRACKING ===
+// === Player Cube ===
+const playerSize = new THREE.Vector3(50, 50, 50);
+const player = new THREE.Mesh(
+  new THREE.BoxGeometry(...playerSize.toArray()),
+  new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+);
+
+
+
+player.position.set(0, 5000, 0);
+scene.add(player);
+const debugBox = new THREE.Box3Helper(
+  new THREE.Box3().setFromCenterAndSize(player.position, playerSize),
+  0x00ff00
+);
+scene.add(debugBox);
+const playerHelper = new THREE.BoxHelper(player, 0x00ff00);
+scene.add(playerHelper);
+// asix helper
+const axesHelper = new THREE.AxesHelper(100);
+scene.add(axesHelper);
+// === Input Tracking ===
+const keys: Record<string, boolean> = {};
+window.addEventListener("keydown", (e) => keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup", (e) => keys[e.key.toLowerCase()] = false);
+
 const keyboardKeys: Record<string, boolean> = {};
+window.addEventListener("keydown", (e) => keyboardKeys[e.key] = true);
+window.addEventListener("keyup", (e) => keyboardKeys[e.key] = false);
 
-window.addEventListener("keydown", (e) => {
-  keyboardKeys[e.key] = true;
-});
-window.addEventListener("keyup", (e) => {
-  keyboardKeys[e.key] = false;
-});
+// === Player Physics ===
+let velocityY = 0;
+const gravity = -0.5;
+let canJump = true;
 
-// === CAMERA MOVEMENT LOGIC ===
-// Place this inside your animate() function:
-const moveSpeed = 0.8;
-
-
+// === Camera Movement ===
+const cameraMoveSpeed = 2;
 function handleCameraMovementXYZ() {
-  // Left/Right → X axis
-  if (keyboardKeys["ArrowLeft"]) {
-    camera.position.x -= moveSpeed;
-  }
-  if (keyboardKeys["ArrowRight"]) {
-    camera.position.x += moveSpeed;
-  }
+  if (keyboardKeys["ArrowLeft"])  camera.position.x -= cameraMoveSpeed;
+  if (keyboardKeys["ArrowRight"]) camera.position.x += cameraMoveSpeed;
+  if (keyboardKeys["ArrowUp"])    camera.position.y += cameraMoveSpeed;
+  if (keyboardKeys["ArrowDown"])  camera.position.y -= cameraMoveSpeed;
+  if (keyboardKeys["z"])          camera.position.z -= cameraMoveSpeed;
+  if (keyboardKeys["x"])          camera.position.z += cameraMoveSpeed;
+}
 
-  // Up/Down → Y axis
-  if (keyboardKeys["ArrowUp"]) {
-    camera.position.y += moveSpeed;
-  }
-  if (keyboardKeys["ArrowDown"]) {
-    camera.position.y -= moveSpeed;
-  }
+// === Collision Setup ===
+const colliders: THREE.Box3[] = [];
+let floorY = 0; // This will hold the detected floor height
 
-  // Optional: Z axis movement
-  if (keyboardKeys["z"]) {
-    camera.position.z -= moveSpeed; // forward
+function isColliding(pos: THREE.Vector3): boolean {
+  const box = new THREE.Box3().setFromCenterAndSize(pos.clone(), playerSize);
+  for (const collider of colliders) {
+    if (box.intersectsBox(collider)) {
+      console.log("🟥 Collision with:", collider);
+      return true;
+    }
   }
-  if (keyboardKeys["x"]) {
-    camera.position.z += moveSpeed; // backward
+  return false;
+}
+
+
+// === Load GLTF Scene ===
+const loader = new GLTFLoader();
+loader.load(
+  "3D_objects/house_interior/scene.gltf",
+  (gltf) => {
+     gltf.scene.scale.set(1, 1, 1);
+
+   
+    let minY = Infinity;
+
+    gltf.scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.updateWorldMatrix(true, false);
+        const box = new THREE.Box3().setFromObject(mesh);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        if (box.min.y < minY) minY = box.min.y;
+        if (size.length() < 10) return;
+        colliders.push(box);
+
+        // Track the lowest Y point (floor level)
+       
+        
+        // Visualize bounding boxes
+        const helper = new THREE.Box3Helper(box, 0xff0000);
+        scene.add(helper);
+      }
+    });
+
+    // Set floor height
+    floorY = minY;
+
+    // Place player on floor
+    player.position.set(0, floorY , 100); // instead of 200
+
+    
+
+    scene.add(gltf.scene);
+  },
+  undefined,
+  (error) => console.error("❌ Failed to load model:", error)
+);
+
+// === Animate ===
+function animate() {
+  requestAnimationFrame(animate);
+
+  const speed = 2;
+const horizontal = player.position.clone();
+
+// Move left/right/forward/back
+if (keys["w"]) horizontal.z -= speed;
+if (keys["s"]) horizontal.z += speed;
+if (keys["a"]) horizontal.x -= speed;
+if (keys["d"]) horizontal.x += speed;
+
+// Horizontal collision only
+const horizontalTest = horizontal.clone();
+horizontalTest.y = player.position.y; // keep Y the same
+
+if (!isColliding(horizontalTest)) {
+  player.position.x = horizontal.x;
+  player.position.z = horizontal.z;
+}
+
+// Gravity and jump
+if (keys[" "] && canJump) {
+  velocityY = 5;
+  canJump = false;
+}
+
+velocityY += gravity;
+const vertical = player.position.clone();
+vertical.y += velocityY;
+
+if (!isColliding(vertical)) {
+  player.position.y = vertical.y;
+} else {
+  if (player.position.y > vertical.y) {
+    velocityY = 0;
+    canJump = true;
   }
 }
 
 
-
-// === Scene & Camera ===
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x222222);
-
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
-camera.position.set(0, 2, 5);
-
-
-const worldSize = new THREE.Vector3(
-  worldBounds.maxX - worldBounds.minX,
-  worldBounds.maxY - worldBounds.minY,
-  worldBounds.maxZ - worldBounds.minZ
-);
-
-const worldCenter = new THREE.Vector3(
-  (worldBounds.minX + worldBounds.maxX) / 2,
-  (worldBounds.minY + worldBounds.maxY) / 2,
-  (worldBounds.minZ + worldBounds.maxZ) / 2
-);
-
-const worldBox = new THREE.BoxHelper(
-  new THREE.Mesh(new THREE.BoxGeometry(worldSize.x, worldSize.y, worldSize.z)),
-  0xffff00
-);
-worldBox.position.copy(worldCenter);
-scene.add(worldBox);
-
-
-
-// === Renderer ===
-const renderer = new THREE.WebGLRenderer({
-  canvas: document.querySelector(".webgl") as HTMLCanvasElement,
-});
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
-
-// === Lighting ===
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(2, 5, 2);
-scene.add(light);
-
-// === Floor / Ground ===
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: "red" })
-);
-floor.rotation.x = -Math.PI / 2;
-floor.position.y = 0; // keep at base level
-floor.receiveShadow = true;
-scene.add(floor);
-
-
-const axesHelper = new THREE.AxesHelper(1000); // 5 = length of each axis line
-scene.add(axesHelper);
-
-
-// === Player Cube ===
-const player = new THREE.Mesh(
-  new THREE.BoxGeometry(100, 100, 100),
-  new THREE.MeshStandardMaterial({ color: 0x00ff00 })
-);
-player.position.y = 20;
-const axes = new THREE.AxesHelper(100);
-player.add(axes); // show axis on player
-
-scene.add(player);
-
-
-// Create loader
-const loader = new GLTFLoader();
-
-// Load model
-
-  
-loader.load(
-  "3D_objects/house_interior/scene.gltf",
-  (gltf) => {
-    console.log("✅ Model loaded!", gltf);
-    scene.add(gltf.scene);
-  },
-  (progress) => {
-    console.log(`📦 Loading progress: ${(progress.loaded / progress.total) * 100}%`);
-  },
-  (error) => {
-    console.error("❌ Failed to load model:", error);
-  }
-);
-
-// === Movement Controls ===
-const keys: Record<string, boolean> = {};
-window.addEventListener("keydown", (e) => (keys[e.key.toLowerCase()] = true));
-window.addEventListener("keyup", (e) => (keys[e.key.toLowerCase()] = false));
-
-// Physics
-let velocityY = 0;
-const gravity = -0.01;
-let canJump = true;
-
-
-
-// === Third-person camera follow ===
-const cameraOffset = new THREE.Vector3(0, 4, 6); // above and behind
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  // Movement (same as before)
-  const speed = 0.1;
-  if (keys["w"]) player.position.z -= speed;
-  if (keys["s"]) player.position.z += speed;
-  if (keys["a"]) player.position.x -= speed;
-  if (keys["d"]) player.position.x += speed;
-
-  // Jump
-  if (keys[" "] && canJump) {
-    velocityY = 0.2;
-    canJump = false;
-  }
-
-  velocityY += gravity;
-  player.position.y += velocityY;
-
-  if (player.position.y < 0.5) {
-    player.position.y = 0.5;
-    velocityY = 0;
-    canJump = true;
-  }
-
-  
- 
-  
-  const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.panSpeed = 0.2;
-
-controls.target.set(0, 0, 0); // free orbit from world center
-
-
-controls.zoomSpeed = 0.5;
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-
+  controls.target.lerp(player.position.clone(), 0.1);
   controls.update();
+  playerHelper.update();
   handleCameraMovementXYZ();
   clampCameraToBounds();
+
+
+  debugBox.box.setFromCenterAndSize(player.position, playerSize);
   renderer.render(scene, camera);
 }
 animate();
