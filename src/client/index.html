@@ -3,8 +3,108 @@
   <head>
     <meta charset="UTF-8" />
     <title>Multiplayer Game</title>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+      }
+      h2 {
+        color: #333;
+      }
+      #playerSelection {
+        margin-bottom: 20px;
+        z-index: 10;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      input[type="text"],
+      select {
+        width: 200px;
+        padding: 8px;
+        margin-bottom: 10px;
+
+      }
+      button {
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .playerSelection {
+        border-radius: 1rem;
+        background-color: #fff;
+        padding: 30px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        margin: 15rem auto;
+       
+      }
+
+      .chat-container {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        width: 300px;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        font-family: Arial, sans-serif;
+        border-radius: 5px;
+      }
+      .chat-messages {
+        height: 150px;
+        overflow-y: auto;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 10px;
+        padding: 5px;
+      }
+      #chatInput {
+        width: 70%;
+        padding: 5px;
+      }
+      #sendMessageButton {
+        padding: 5px;
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+        border: none;
+      }
+      
+    </style>
   </head>
   <body>
+
+    <!-- Form to collect player name and character choice -->
+    <div id="playerSelection" class="playerSelection">
+      <h2>Welcome to the Game!</h2>
+      <label for="playerName">Enter your name:</label>
+      <input type="text" id="playerName" placeholder="Your Name" />
+      
+      <label for="characterChoice">Choose your character:</label>
+      <select id="characterChoice">
+        <option value="Farmer">Farmer</option>
+        <option value="King">King</option>
+      </select>
+      
+      <button id="startGameButton">Start Game</button>
+    </div>
+
+    <div id="chatContainer" class="chat-container" style="display: none;">
+      <div id="chatMessages" class="chat-messages"></div>
+      <input type="text" id="chatInput" placeholder="Type a message..." />
+      <button id="sendMessageButton">Send</button>
+    </div>
+    
     <canvas class="webgl"></canvas>
     <script type="module" src="/index.ts"></script>
   </body>
