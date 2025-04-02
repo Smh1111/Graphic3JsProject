@@ -146,7 +146,6 @@ function startGame(playerName: string, characterChoice: string): void {
   player = new Player(scene);
   enemy = new Enemy(scene);
 
-  // Load player and enemy models dynamically
   Promise.all([
     player.load(`/3D_objects/characters/male/gltf/${characterChoice.toLowerCase()}.gltf`),
     enemy.load("/3D_objects/characters/male/gltf/Adventurer.gltf"),
@@ -158,9 +157,26 @@ function startGame(playerName: string, characterChoice: string): void {
     if (enemy.model) {
       scene.add(enemy.model);
     }
-    animate(); // Start rendering after models load
+    animate();
+
+    // Function to update playerInfo dynamically
+    function updatePlayerInfo() {
+      const otherPlayers = scene.children.filter(obj => obj !== player.model && obj !== ground);
+      
+      if (otherPlayers.length > 0) {
+        document.getElementById("playerInfo")!.textContent = `You should attack Player: ${playerName} | Character: ${characterChoice}`;
+        document.getElementById("playerInfo")!.style.display = "block";
+      } else {
+        document.getElementById("playerInfo")!.style.display = "none";
+      }
+    }
+
+    // Check for players joining every 2 seconds
+    setTimeout(updatePlayerInfo, 5000); 
+    setInterval(updatePlayerInfo, 2000); 
   });
 }
+
 
 function addPlayerNameTag(model: THREE.Object3D, name: string): void {
   const nameDiv = document.createElement("div");

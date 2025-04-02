@@ -79,7 +79,9 @@
         color: white;
         border: none;
       }
-      
+
+
+            
     </style>
   </head>
   <body>
@@ -99,13 +101,17 @@
       <button id="startGameButton">Start Game</button>
     </div>
 
+    <div id="playerInfo" style="display: none; font-weight: bold; font-size: 16px; margin-bottom: 10px; color: red;">
+      
+    </div>
+
     <div id="chatContainer" class="chat-container" style="display: none;">
       <div id="chatMessages" class="chat-messages"></div>
       <input type="text" id="chatInput" placeholder="Type a message..." />
       <button id="sendMessageButton">Send</button>
     </div>
-    
-    <canvas class="webgl"></canvas>
+   
+    <canvas class="webgl"> </canvas>
     <script type="module" src="/index.ts"></script>
   </body>
 </html>
