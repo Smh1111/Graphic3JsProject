@@ -49,7 +49,7 @@ export class HealthBar {
 	updateFromObject(object: THREE.Object3D, camera: THREE.Camera, offsetY = 1.5) {
 		const position = new THREE.Vector3();
 		object.getWorldPosition(position);
-		console.log("Object Position:", object.position);
+		//console.log("Object Position:", object.position);
 		position.y += offsetY;
 	        
 		const screenPos = position.clone().project(camera);

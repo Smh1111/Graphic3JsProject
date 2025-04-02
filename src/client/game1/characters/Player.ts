@@ -9,6 +9,8 @@ export class Player {
   actions: Record<string, THREE.AnimationAction> = {};
   activeAction!: THREE.AnimationAction;
   healthBar: HealthBar;
+  isPunching = false;
+
 
   constructor(private scene: THREE.Scene) {
     this.healthBar = new HealthBar(document.body, 100);
@@ -47,22 +49,45 @@ export class Player {
   }
 
   move(keys: Record<string, { pressed: boolean }>) {
-    if (!this.model) return;
-
+    if (!this.model || this.isPunching) return;
+  
     const speed = 0.05;
-    const isMoving = keys.w.pressed || keys.a.pressed || keys.s.pressed || keys.d.pressed;
-
-    if (keys.a.pressed) this.model.position.x -= speed;
-    if (keys.d.pressed) this.model.position.x += speed;
-    if (keys.w.pressed) this.model.position.z -= speed;
-    if (keys.s.pressed) this.model.position.z += speed;
-
-    this.playAnimation(isMoving ? "Run" : "Idle");
+    const direction = new THREE.Vector3();
+  
+    if (keys.w.pressed) direction.z -= 1;
+    if (keys.s.pressed) direction.z += 1;
+    if (keys.a.pressed) direction.x -= 1;
+    if (keys.d.pressed) direction.x += 1;
+  
+    if (direction.lengthSq() > 0) {
+      direction.normalize();
+      this.model.position.addScaledVector(direction, speed);
+      const angle = Math.atan2(direction.x, direction.z);
+      this.model.rotation.y = angle;
+    }
+  
+    this.playAnimation(direction.lengthSq() > 0 ? "Run" : "Idle");
   }
+  
+  
 
   punch() {
-    this.playAnimation("Punch_Left");
+    const punchAction = this.actions["Punch_Left"];
+    if (!punchAction || this.isPunching) return;
+  
+    this.isPunching = true;
+  
+    this.activeAction?.stop();
+    this.activeAction = punchAction;
+  
+    punchAction.reset();
+    punchAction.setLoop(THREE.LoopOnce, 1);
+    punchAction.clampWhenFinished = true;
+    punchAction.play();
   }
+  
+  
+  
 
   playAnimation(name: string) {
     if (this.actions[name] && this.activeAction !== this.actions[name]) {
@@ -84,11 +109,13 @@ export class Player {
       const groundTop = ground.position.y + ground.height / 2;
     
       if (modelBottom <= groundTop) {
-        if (Math.abs(this.velocity.y) < 0.01) {
+        console.log("modelBottom, groundTop ", modelBottom, groundTop);
+
+        if (Math.abs(this.velocity.y) < 0.0001) {
           this.velocity.y = 0; // ✅ stop bouncing
-        } else {
-          this.velocity.y *= -0.01; // ✅ bounce
-        }
+        } else if (Math.abs(this.velocity.y) < 0) {
+          this.velocity.y *= -0.5; // ✅ bounce
+        } 
     
         const modelHeight = bbox.max.y - bbox.min.y;
         this.model.position.y = groundTop + modelHeight / 2;
@@ -97,7 +124,16 @@ export class Player {
       }
     }
     
-  update(delta: number) {
-    this.mixer?.update(delta);
-  }
+    update(delta: number) {
+      this.mixer?.update(delta);
+    
+      if (this.isPunching) {
+        const punchAction = this.actions["Punch_Left"];
+        if (punchAction && punchAction.time >= punchAction.getClip().duration) {
+          this.isPunching = false;
+          this.playAnimation("Idle");
+        }
+      }
+    }
+    
 }
