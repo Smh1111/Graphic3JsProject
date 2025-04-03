@@ -1,20 +1,54 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { HealthBar } from "../ui/HealthBar";
+
 import { Box } from "../utils/Box";
+import { HealthBar } from "../System/HealthBar";
 
 export class Player {
+  
   model!: THREE.Group;
   mixer!: THREE.AnimationMixer;
   actions: Record<string, THREE.AnimationAction> = {};
   activeAction!: THREE.AnimationAction;
   healthBar: HealthBar;
   isPunching = false;
+  socketID!: string;
+  hitCooldown = false;
+
 
 
   constructor(private scene: THREE.Scene) {
     this.healthBar = new HealthBar(document.body, 100);
     this.healthBar.setPosition(20, 20);
+
+    
+  }
+
+  setHealth(health: number) {
+    this.healthBar.setHealth(health);
+  
+    if (this.healthBar.isDead()) {
+      this.playAnimation("Death");
+      
+    }
+  }
+  
+  
+
+  async takeHit(amount: number) {
+    this.healthBar.damage(amount);
+    this.playAnimation("HitReceive_2");
+  
+    if (this.healthBar.isDead()) {
+      this.playAnimation("Death");
+    }
+  }
+  
+
+  async setPosition(x: number, y: number, z: number) {
+
+    if (!this.model) return;
+    this.model.position.set(x, y, z);
   }
 
   async load(path: string): Promise<void> {
@@ -23,7 +57,6 @@ export class Player {
 
     this.model = gltf.scene;
     this.model.scale.set(1, 1, 1);
-    this.model.position.set(0, 5, 0);
 
     this.model.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) 
@@ -53,18 +86,18 @@ export class Player {
   
     const speed = 0.05;
     const direction = new THREE.Vector3();
-  
-    if (keys.w.pressed) direction.z -= 1;
-    if (keys.s.pressed) direction.z += 1;
-    if (keys.a.pressed) direction.x -= 1;
-    if (keys.d.pressed) direction.x += 1;
-  
-    if (direction.lengthSq() > 0) {
-      direction.normalize();
-      this.model.position.addScaledVector(direction, speed);
-      const angle = Math.atan2(direction.x, direction.z);
-      this.model.rotation.y = angle;
-    }
+
+if (keys.w.pressed) direction.z -= 1;
+if (keys.s.pressed) direction.z += 1;
+if (keys.a.pressed) direction.x -= 1;
+if (keys.d.pressed) direction.x += 1;
+
+if (direction.lengthSq() > 0) {
+  direction.normalize();
+  this.model.position.addScaledVector(direction, speed);
+  const angle = Math.atan2(direction.x, direction.z);
+  this.model.rotation.y = angle;
+}
   
     this.playAnimation(direction.lengthSq() > 0 ? "Run" : "Idle");
   }
@@ -97,32 +130,23 @@ export class Player {
     }
   }
    velocity = new THREE.Vector3(0, -0.01, 0);
-    gravity = -0.002;
+    gravity = -0.03;
     
-    updatePhysics(ground: Box) {
-      if (!this.model) return;
+    // updatePhysics(ground: Box) {
+    //   if (!this.model) return;
     
-      this.velocity.y += this.gravity;
+    //   this.velocity.y += this.gravity;
     
-      const bbox = new THREE.Box3().setFromObject(this.model);
-      const modelBottom = bbox.min.y + this.velocity.y;
-      const groundTop = ground.position.y + ground.height / 2;
-    
-      if (modelBottom <= groundTop) {
-        console.log("modelBottom, groundTop ", modelBottom, groundTop);
+    //   const bbox = new THREE.Box3().setFromObject(this.model);
+    //   const modelBottom = bbox.min.y + this.velocity.y;
+    //   const groundTop = -ground.position.y + ground.height / 2;
 
-        if (Math.abs(this.velocity.y) < 0.0001) {
-          this.velocity.y = 0; // ✅ stop bouncing
-        } else if (Math.abs(this.velocity.y) < 0) {
-          this.velocity.y *= -0.5; // ✅ bounce
-        } 
+      
+      
+      
+    // }
     
-        const modelHeight = bbox.max.y - bbox.min.y;
-        this.model.position.y = groundTop + modelHeight / 2;
-      } else {
-        this.model.position.y += this.velocity.y;
-      }
-    }
+    
     
     update(delta: number) {
       this.mixer?.update(delta);
@@ -135,5 +159,15 @@ export class Player {
         }
       }
     }
+
+    isOnGround(ground: Box): boolean {
+      const bbox = new THREE.Box3().setFromObject(this.model);
+      const modelBottomY = bbox.min.y;
+      const groundTopY = ground.position.y + ground.height / 2;
+      return modelBottomY <= groundTopY + 0.01;
+    }
+
+    
+    
     
 }
