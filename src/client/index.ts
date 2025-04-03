@@ -5,7 +5,7 @@ import { Enemy } from "./game1/characters/Enemy";
 import { GameState } from "./game1/utils/GameState";
 import { Box } from "./game1/utils/Box";
 import { CSS2DRenderer, CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 // === Scene Setup ===
 const scene = new THREE.Scene();
@@ -18,16 +18,84 @@ const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-
-// Ground as a Box (wide platform)
+// Ground (Arena Floor)
 const ground = new Box(
-  20, 0.5, 20,
-  "#226622",
+  20, 0.5, 20,  
+  "#226622",  // Dark red (like a battle ring)
   new THREE.Vector3(0, 0, 0),
   new THREE.Vector3(0, -2, 0)
 );
 ground.receiveShadow = true;
 scene.add(ground);
+
+// Left Wall (Rusty Metal Look)
+const leftWall = new Box(
+  0.5, 5, 20,
+  "#3B3B3B",  // Dark gray, like a steel wall
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(-10, 0, 0)
+);
+leftWall.receiveShadow = true;
+scene.add(leftWall);
+
+// Right Wall (Same as Left Wall)
+const rightWall = new Box(
+  0.5, 5, 20,
+  "#3B3B3B",
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(10, 0, 0)
+);
+rightWall.receiveShadow = true;
+scene.add(rightWall);
+
+// Back Wall (Optional - Closes the Arena)
+const backWall = new Box(
+  20, 5, 0.5,
+  "#3B3B3B",
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(0, 0, -10)
+);
+backWall.receiveShadow = true;
+scene.add(backWall);
+
+// Front Fence (Optional - Open Cage Look)
+const frontFence = new Box(
+  20, 2.5, 0.2,  
+  "#777777",  // Gray (represents metal bars)
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(0, 0, 10)
+);
+frontFence.receiveShadow = true;
+scene.add(frontFence);
+
+// Tree 1 (Left Side)
+const trunk1 = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.3, 0.3, 3, 10),
+  new THREE.MeshStandardMaterial({ color: "#8B5A2B" }) // Brown trunk
+);
+trunk1.position.set(-8, -0.5, -8);
+scene.add(trunk1);
+
+const leaves1 = new THREE.Mesh(
+  new THREE.SphereGeometry(1.5, 10, 10),
+  new THREE.MeshStandardMaterial({ color: "#2E8B57" }) // Green leaves
+);
+leaves1.position.set(-8, 1.5, -8);
+scene.add(leaves1);
+
+// Tree 2 (Right Side)
+const trunk2 = trunk1.clone();
+trunk2.position.set(8, -0.5, -8);
+scene.add(trunk2);
+
+const leaves2 = leaves1.clone();
+leaves2.position.set(8, 1.5, -8);
+scene.add(leaves2);
+
+
+
+
+
 
 new OrbitControls(camera, renderer.domElement);
 
@@ -43,6 +111,11 @@ dirLight.castShadow = true;
 scene.add(dirLight);
 
 
+
+
+
+// === Camera Controls ===
+new OrbitControls(camera, renderer.domElement);
 
 // === Input ===
 const keys = { w: { pressed: false }, a: { pressed: false }, s: { pressed: false }, d: { pressed: false } };
@@ -218,6 +291,7 @@ function sendMessage() {
   chatInput.value = ""; 
 }
 
+
 // === Animation Loop ===
 const clock = new THREE.Clock();
 function animate(): void {
@@ -243,4 +317,6 @@ function animate(): void {
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
 }
+  
+
 
