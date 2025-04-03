@@ -42,10 +42,11 @@ scene.add(dirLight);
 // === Characters ===
 const player = new Player(scene);
 const enemy = new Enemy(scene);
-
+const enemy2 = new Enemy(scene);
 Promise.all([
   player.load("/3D_objects/characters/male/gltf/Adventurer.gltf"),
-  enemy.load("/3D_objects/characters/male/gltf/Adventurer.gltf")
+  player.load("/3D_objects/characters/male/gltf/Adventurer.gltf"),
+  
 ]);
 
 // === Input ===
@@ -79,14 +80,17 @@ function animate() {
 	  player.move(keys);
 	  player.update(delta);
 	  enemy.update(delta);
+    enemy2.update(delta);
         
 	  // 👇 Update health bar positions
     if (player?.model && enemy?.model) {
       player.updatePhysics(ground);
       enemy.updatePhysics(ground);
+      enemy2.updatePhysics(ground);
     
       player.healthBar.updateFromObject(player.model, camera, 2.2);
       enemy.healthBar.updateFromObject(enemy.model, camera, 2.2);
+      enemy2.healthBar.updateFromObject(enemy2.model, camera, 2.2);
     }
     
     
