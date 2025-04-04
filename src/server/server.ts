@@ -1,19 +1,24 @@
 import { debug } from "console";
 import express from "express";
 import http from "http";
+import path from "path";
 import { Server } from "socket.io";
 
 const app = express();
+
 const server = http.createServer(app);
 const io = new Server(server, {
-	cors: {
-		origin: "http://localhost:5173",
-		methods: ["GET", "POST"],
-	},
+  cors: {
+    origin: "*", // during dev
+  },
 });
 
-app.use(express.static("public"));
+// Serve static frontend (after Vite build)
+app.use(express.static(path.join(__dirname, "../../client")));
 
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../../client/index.html"));
+});
 // object of socket id : player object
 const playersListOnServer: Record<
 	string,

@@ -2,11 +2,14 @@
   "name": "graphicproject",
   "version": "1.0.0",
   "main": "index.ts",
-  "scripts": {
-    "frontend-dev": "vite --host",
-    "backend-dev": "nodemon src/server/server.ts",
-    "dev": "concurrently --kill-others \"npm run frontend-dev\" \"npm run backend-dev\""
+ "scripts": {
+  "frontend-dev": "vite --host",
+  "backend-dev": "nodemon src/server/server.ts",
+  "dev": "concurrently --kill-others \"npm run frontend-dev\" \"npm run backend-dev\"",
+  "build": "vite build && tsc",
+  "start": "node dist/server/server.js"
   },
+
   "keywords": [],
   "author": "",
   "license": "ISC",
