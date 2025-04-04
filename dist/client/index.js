@@ -88,7 +88,7 @@ const listener = new THREE.AudioListener();
 // 🔊 Intro/start sound
 const introSound = new THREE.Audio(listener);
 const audioLoader = new THREE.AudioLoader();
-audioLoader.load("game1/sound/epic-hybrid-logo-157092.mp3", (buffer) => {
+audioLoader.load("/sound/epic-hybrid-logo-157092.mp3", (buffer) => {
     introSound.setBuffer(buffer);
     introSound.setLoop(false);
     introSound.setVolume(0.8);
@@ -129,7 +129,7 @@ async function startGame(playerName, avatarName) {
     let lastX = 0;
     let lastZ = 0;
     let lastSentAnim = "";
-    const socket = (0, socket_io_client_1.default)("http://localhost:3000");
+    const socket = (0, socket_io_client_1.default)();
     socket.on("connect", () => {
         console.log("✅ Connected to server with ID:", socket.id);
     });

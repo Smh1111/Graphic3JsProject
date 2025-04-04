@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Multiplayer Game</title>
+  <script type="module" crossorigin src="/assets/index-bY9uJqlB.js"></script>
+</head>
+
+<style>
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0f0f0f;
+  }
+
+  canvas.webgl {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+  }
+
+  #labelContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+  }
+
+  .playerSelection {
+    border-radius: 1rem;
+    background: rgba(30, 30, 30, 0.95);
+    color: #f0f0f0;
+    padding: 30px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    max-width: 400px;
+    margin: 10vh auto;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+  }
+
+  .playerSelection h2 {
+    margin-bottom: 20px;
+    color: #00ffae;
+  }
+
+  .playerSelection label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 500;
+    text-align: left;
+  }
+
+  .playerSelection input,
+  .playerSelection select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 8px;
+    border: none;
+    background: #1e1e1e;
+    color: #fff;
+    font-size: 14px;
+  }
+
+  .playerSelection button {
+    margin-top: 25px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(45deg, #00ffae, #00b3ff);
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.3s ease;
+  }
+
+  .playerSelection button:hover {
+    transform: scale(1.05);
+    background: linear-gradient(45deg, #00ffe5, #0095ff);
+  }
+
+  #playerInfo {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-weight: bold;
+  font-size: 18px;
+  color: #0d02df; /* Bright white text */
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent bg */
+  padding: 10px 15px;
+  border: 2px solid #00ffe1; /* Vibrant cyan border */
+  border-radius: 10px;
+ 
+ 
+  transition: 0.3s ease;
+}
+
+
+
+  .chat-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 300px;
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid #333;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    z-index: 2;
+    color: white;
+  }
+
+  .chat-messages {
+    height: 150px;
+    overflow-y: auto;
+    border-bottom: 1px solid #444;
+    margin-bottom: 10px;
+    padding: 5px;
+    font-size: 13px;
+  }
+
+  #chatInput {
+    width: 65%;
+    padding: 8px;
+    background: #1e1e1e;
+    border: none;
+    color: white;
+    border-radius: 6px;
+  }
+
+  #sendMessageButton {
+    width: 30%;
+    padding: 8px;
+    background: #00b3ff;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+  }
+
+  #sendMessageButton:hover {
+    background: #00a0e0;
+  }
+</style>
+
+<body>
+  <!-- Form to collect player name and character choice -->
+  <div id="playerSelection" class="playerSelection">
+    <h2>Welcome to the Game!</h2>
+    <label for="playerName">Enter your name:</label>
+    <input type="text" id="playerName" placeholder="Your Name" />
+
+    <label for="characterChoice">Choose your character:</label>
+    <select id="characterChoice">
+      <option value="Farmer">Farmer</option>
+      <option value="King">King</option>
+      <option value="Adventurer">Adventurer</option>
+      <option value="Punk">Punk</option>
+      <option value="Swat">Swat</option>
+      <option value="Casual_Hoodie">Street Boy</option>
+      <option value="Casual_2">Street Boy 2</option>
+    </select>
+
+    <button id="startGameButton">Join the Game</button>
+  </div>
+
+  <div id="playerInfo" style="display: none; font-weight: bold; font-size: 16px; margin-bottom: 10px; color: red;">
+  </div>
+
+  <div id="chatContainer" class="chat-container" style="display: none;">
+    <div id="chatMessages" class="chat-messages"></div>
+    <input type="text" id="chatInput" placeholder="Type a message..." />
+    <button id="sendMessageButton">Send</button>
+  </div>
+  <canvas class="webgl"></canvas>
+</body>
+
+</html>
