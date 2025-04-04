@@ -14,6 +14,10 @@ const io = new socket_io_1.Server(server, {
         origin: "*", // during dev
     },
 });
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`✅ Server listening on port ${PORT}`);
+});
 // Serve static frontend (after Vite build)
 app.use(express_1.default.static(path_1.default.join(__dirname, "../../client")));
 app.get("*", (req, res) => {
@@ -106,4 +110,3 @@ io.on("connection", (socket) => {
         });
     });
 });
-server.listen(3000, () => console.log("Server running on http://localhost:3000"));

@@ -16,16 +16,15 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
-});
-
-
-// Serve static frontend (after Vite build)
-app.use(express.static(path.join(__dirname, "../../client")));
+// 🔥 Serve static frontend (built by Vite)
+app.use(express.static(path.join(__dirname, "../client")));
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../../client/index.html"));
+  res.sendFile(path.join(__dirname, "../client/index.html"));
+});
+
+server.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
 // object of socket id : player object
 const playersListOnServer: Record<
