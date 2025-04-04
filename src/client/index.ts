@@ -93,10 +93,6 @@ leaves2.position.set(8, 1.5, -8);
 scene.add(leaves2);
 
 
-
-
-
-
 new OrbitControls(camera, renderer.domElement);
 
 // Replace this or add it
@@ -211,9 +207,36 @@ document.getElementById("startGameButton")?.addEventListener("click", () => {
     document.getElementById("chatContainer")?.setAttribute("style", "display: block;");
     
     // Start the game with selected character
+    
     startGame(playerName, characterChoice);
+    playStartSound(); // Play sound when game starts
   }
 });
+
+
+// Create an audio listener (needed for sound)
+const listener = new THREE.AudioListener();
+camera.add(listener); // Attach to camera
+
+// Load sound file
+const sound = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+audioLoader.load("/Users/myopapakyaw/Graphic3JsProject/src/client/game1/sound/epic-hybrid-logo-157092.mp3", (buffer) => {
+  sound.setBuffer(buffer);
+  sound.setLoop(false); // Play once
+  sound.setVolume(0.8); // Adjust volume
+});
+
+// Function to play sound
+function playStartSound() {
+  if (sound.isPlaying) {
+    sound.stop(); // Stop previous sound if playing
+  }
+  sound.play(); // Play sound
+}
+
+
+
 
 function startGame(playerName: string, characterChoice: string): void {
   player = new Player(scene);
@@ -231,6 +254,8 @@ function startGame(playerName: string, characterChoice: string): void {
       scene.add(enemy.model);
     }
     animate();
+   
+     // Play sound when game starts
 
     // Function to update playerInfo dynamically
     function updatePlayerInfo() {
