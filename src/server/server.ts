@@ -41,10 +41,7 @@ app.get("*", (req, res, next) => {
   res.sendFile(path.join(clientPath, "index.html"));
 });
 
-app.use((req, res) => {
-	res.status(404).send("File not found");
-    });
-    
+
 server.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
