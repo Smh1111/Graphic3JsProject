@@ -17,7 +17,7 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 
 // 🔥 Serve static frontend (built by Vite)
-app.use(express.static(path.join(__dirname, "../client")));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/index.html"));

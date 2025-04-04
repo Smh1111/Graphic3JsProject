@@ -96,7 +96,7 @@ audioLoader.load("/sound/epic-hybrid-logo-157092.mp3", (buffer) => {
 // 👊 Punch sound
 const punchSound = new THREE.Audio(listener);
 const punchAudioLoader = new THREE.AudioLoader();
-punchAudioLoader.load("game1/sound/punch.mp3", (buffer) => {
+punchAudioLoader.load("/sound/punch.mp3", (buffer) => {
     punchSound.setBuffer(buffer);
     punchSound.setLoop(false);
     punchSound.setVolume(1.0);
@@ -104,7 +104,7 @@ punchAudioLoader.load("game1/sound/punch.mp3", (buffer) => {
 // 🎵 Background game music
 const backgroundSound = new THREE.Audio(listener);
 const backgroundAudioLoader = new THREE.AudioLoader();
-backgroundAudioLoader.load("game1/sound/backgroundGame.mp3", (buffer) => {
+backgroundAudioLoader.load("/sound/backgroundGame.mp3", (buffer) => {
     backgroundSound.setBuffer(buffer); // ✅ fixed
     backgroundSound.setLoop(true);
     backgroundSound.setVolume(0.3); // Lower volume for background music
