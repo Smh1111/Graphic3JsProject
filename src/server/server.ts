@@ -3,7 +3,7 @@ import express from "express";
 import http from "http";
 import path from "path";
 import { Server } from "socket.io";
-
+import fs from "fs";
 const app = express();
 
 
@@ -23,12 +23,23 @@ const __dirname = path.resolve();
 
 // ✅ Serve Vite build
 const clientPath = path.join(__dirname, "dist/client");
+
+
+// ✅ Static files first
 app.use(express.static(clientPath));
 
-// ✅ Handle SPA routing fallback
-app.get("*", (req, res) => {
+// ✅ Custom fallback only if not a file
+app.get("*", (req, res, next) => {
+  const requestedPath = path.join(clientPath, req.path);
+
+  if (fs.existsSync(requestedPath)) {
+    return res.sendFile(requestedPath); // it's a real file
+  }
+
+  // fallback to index.html for SPA routes
   res.sendFile(path.join(clientPath, "index.html"));
 });
+
 
 server.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
