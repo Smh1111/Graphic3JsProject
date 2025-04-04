@@ -315,7 +315,7 @@ async function startGame(playerName: string, avatarName: string) {
 	const localPlayer = new Player(scene);
 
 	const avatarNamePath =
-		"/3D_objects/characters/male/gltf/" + avatarName + ".gltf";
+		"src/client/3D_objects/characters/male/gltf/" + avatarName + ".gltf";
 
 	await localPlayer.load(avatarNamePath);
 	localPlayer.playerName = playerName; // 👈 Set name here
