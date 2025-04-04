@@ -14,6 +14,7 @@ export class Player {
 	isPunching = false;
 	socketID!: string;
 	hitCooldown = false;
+	playerName!: string;
 
 	constructor(private scene: THREE.Scene,) {
 		this.healthBar = new HealthBar(document.body, 100);
@@ -117,18 +118,24 @@ export class Player {
 
 	punch() {
 		const punchAction = this.actions["Punch_Left"];
-		if (!punchAction || this.isPunching) return;
-
+		if (!punchAction || this.isPunching) {
+			console.warn("❌ Punch not triggered — missing animation or already punching.");
+			return;
+		}
+	
+		console.log("✅ Punch animation playing");
+	
 		this.isPunching = true;
-
+	
 		this.activeAction?.stop();
 		this.activeAction = punchAction;
-
+	
 		punchAction.reset();
 		punchAction.setLoop(THREE.LoopOnce, 3);
 		punchAction.clampWhenFinished = true;
 		punchAction.play();
 	}
+	
 
 	playAnimation(name: string) {
 		if (

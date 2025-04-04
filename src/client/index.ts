@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Player } from "./game1/characters/Player";
-import { GameState } from "./game1/utils/GameState";
 import { Box } from "./game1/utils/Box";
 import io from "socket.io-client";
 import {
@@ -24,7 +23,6 @@ labelRenderer.domElement.style.position = "absolute";
 labelRenderer.domElement.style.top = "0px";
 labelRenderer.domElement.style.pointerEvents = "none"; // 🔥 Fix added here
 document.body.appendChild(labelRenderer.domElement);
-
 
 function addPlayerNameTag(model: THREE.Object3D, name: string): void {
 	const nameDiv = document.createElement("div");
@@ -66,41 +64,63 @@ document.getElementById("startGameButton")?.addEventListener("click", () => {
 		);
 
 		// Start the game with selected character
-		
+
 		startGame(playerName, avatarName);
 		playStartSound(); // Play sound when game starts
 	}
 });
-
-// Create an audio listener (needed for sound)
+// 🎧 Create an audio listener (needed for all positional sounds)
 const listener = new THREE.AudioListener();
-// Load sound file
-const sound = new THREE.Audio(listener);
+
+// 🔊 Intro/start sound
+const introSound = new THREE.Audio(listener);
 const audioLoader = new THREE.AudioLoader();
 audioLoader.load("game1/sound/epic-hybrid-logo-157092.mp3", (buffer) => {
-	sound.setBuffer(buffer);
-	sound.setLoop(false); // Play once
-	sound.setVolume(0.8); // Adjust volume
+	introSound.setBuffer(buffer);
+	introSound.setLoop(false);
+	introSound.setVolume(0.8);
 });
 
-// Function to play sound
-function playStartSound() {
-	if (sound.isPlaying) {
-		sound.stop(); // Stop previous sound if playing
-	}
-	sound.play(); // Play sound
-}
+// 👊 Punch sound
+const punchSound = new THREE.Audio(listener);
+const punchAudioLoader = new THREE.AudioLoader();
+punchAudioLoader.load("game1/sound/punch.mp3", (buffer) => {
+	punchSound.setBuffer(buffer);
+	punchSound.setLoop(false);
+	punchSound.setVolume(1.0);
+});
 
+// 🎵 Background game music
+const backgroundSound = new THREE.Audio(listener);
+const backgroundAudioLoader = new THREE.AudioLoader();
+backgroundAudioLoader.load("game1/sound/backgroundGame.mp3", (buffer) => {
+	backgroundSound.setBuffer(buffer); // ✅ fixed
+	backgroundSound.setLoop(true);
+	backgroundSound.setVolume(0.3); // Lower volume for background music
+});
+
+// ▶️ Function to start intro music and transition to background music
+function playStartSound() {
+	if (introSound.isPlaying) backgroundSound.stop();
+	
+
+	introSound.onEnded = () => {
+		console.log("🔊 Start music ended, starting background music...");
+		if (backgroundSound.buffer && !backgroundSound.isPlaying) {
+			backgroundSound.play();
+		}
+	};
+}
 
 // Chat functionality
 const chatMessages = document.getElementById("chatMessages") as HTMLDivElement;
 const chatInput = document.getElementById("chatInput") as HTMLInputElement;
-const sendMessageButton = document.getElementById("sendMessageButton") as HTMLButtonElement;
+const sendMessageButton = document.getElementById(
+	"sendMessageButton"
+) as HTMLButtonElement;
 
+const cameraOffset = new THREE.Vector3(0, 3, 5); // Offset from player
 
-
-    
-    
 async function startGame(playerName: string, avatarName: string) {
 	let lastX = 0;
 	let lastZ = 0;
@@ -128,21 +148,21 @@ async function startGame(playerName: string, avatarName: string) {
 		}
 	});
 	sendMessageButton.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress", (e) => {
-	if (e.key === "Enter") sendMessage();
-});
+	chatInput.addEventListener("keypress", (e) => {
+		if (e.key === "Enter") sendMessage();
+	});
 
 	function sendMessage() {
 		if (chatInput.value.trim() === "") return;
-	
+
 		const message = chatInput.value.trim();
-	
+
 		// Emit to server
 		socket.emit("chat-message", {
 			name: playerName,
 			message,
 		});
-	
+
 		chatInput.value = "";
 	}
 	socket.on("chat-message", ({ name, message }) => {
@@ -151,7 +171,6 @@ chatInput.addEventListener("keypress", (e) => {
 		chatMessages.appendChild(messageDiv);
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 	});
-	
 
 	//let playerId: string;
 	const remotePlayers: Record<string, Player> = {};
@@ -166,14 +185,28 @@ chatInput.addEventListener("keypress", (e) => {
 		1000
 	);
 	camera.position.set(0, 2, 5);
-	camera.add(listener); // Attach to camera
 
+	camera.add(listener); // Attach to camera
+	// 🎶 Background music
+	const bgMusic = new THREE.Audio(listener);
+	const bgAudioLoader = new THREE.AudioLoader();
+
+	bgAudioLoader.load("game1/sound/backgroundGame.mp3", (buffer) => {
+		bgMusic.setBuffer(buffer);
+		bgMusic.setLoop(true); // Keep looping
+		bgMusic.setVolume(0.3); // Lower volume so it doesn't overpower effects
+		bgMusic.play();
+	});
+
+	const canvas = document.querySelector(
+		"canvas.webgl"
+	) as HTMLCanvasElement;
 	const renderer = new THREE.WebGLRenderer({
+		canvas: canvas,
 		alpha: true,
 		antialias: true,
 	});
 	renderer.setSize(window.innerWidth, window.innerHeight);
-	document.body.appendChild(renderer.domElement);
 
 	// Ground (Arena Floor)
 	const ground = new Box(
@@ -259,7 +292,14 @@ chatInput.addEventListener("keypress", (e) => {
 	leaves2.position.set(8, 1.5, -8);
 	scene.add(leaves2);
 
-	new OrbitControls(camera, renderer.domElement);
+	const controls = new OrbitControls(camera, renderer.domElement);
+	controls.enableDamping = true; // Smooth motion
+	controls.dampingFactor = 0.05;
+
+	controls.enablePan = false; // Disable panning
+	controls.minDistance = 5;
+	controls.maxDistance = 10;
+	controls.maxPolarAngle = Math.PI / 2; // Limit vertical angle (so you don't go below the ground)
 
 	const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
 	hemiLight.position.set(0, 20, 0);
@@ -278,13 +318,11 @@ chatInput.addEventListener("keypress", (e) => {
 		"/3D_objects/characters/male/gltf/" + avatarName + ".gltf";
 
 	await localPlayer.load(avatarNamePath);
-	
-addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
+	localPlayer.playerName = playerName; // 👈 Set name here
 
+	addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 
-	
-	
-	socket.emit("player-creation", {avatarName, playerName});
+	socket.emit("player-creation", { avatarName, playerName });
 
 	socket.on("existing-players", (players) => {
 		console.log("Received existing players:", players); // 👈 debug log
@@ -317,16 +355,33 @@ addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 	scene.add(groundHelper);
 
 	window.addEventListener("keydown", (e) => {
+		// 👇 Prevent player from moving while typing
+		if (
+			(document.activeElement as HTMLElement)
+				.tagName === "INPUT"
+		)
+			return;
+
 		if (e.code === "Space") {
 			localPlayer.punch();
-			console.log("Punching");
 			socket.emit("action", { type: "punch" });
+
+			// 👇 Play punch sound locally
+			if (punchSound.isPlaying) punchSound.stop();
+			punchSound.play();
 		}
 
 		if (keys[e.key]) keys[e.key].pressed = true;
 	});
 
 	window.addEventListener("keyup", (e) => {
+		// 👇 Prevent unintended key release triggers from chat
+		if (
+			(document.activeElement as HTMLElement)
+				.tagName === "INPUT"
+		)
+			return;
+
 		if (keys[e.key]) keys[e.key].pressed = false;
 	});
 
@@ -336,8 +391,8 @@ addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 			remote.setPosition(x, 0, z);
 			remote.model.rotation.y = rotationY;
 
-			// ✅ Play the animation the sender is in
-			if (anim) {
+			// ✅ Only change animation if not punching
+			if (anim && !remote.isPunching) {
 				remote.playAnimation(anim);
 			}
 		}
@@ -418,6 +473,8 @@ addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 		playerName: string
 	) {
 		const newP = new Player(scene);
+		newP.playerName = playerName; // 👈 Set name here
+
 		await newP
 			.load(
 				"/3D_objects/characters/male/gltf/" +
@@ -436,13 +493,13 @@ addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 				);
 			});
 
-			addPlayerNameTag(newP.model, playerName); 
+		addPlayerNameTag(newP.model, playerName);
 	}
 
 	const clock = new THREE.Clock();
 	function animate() {
-		
 		requestAnimationFrame(animate);
+
 		const delta = clock.getDelta();
 
 		localPlayer.move(keys);
@@ -464,11 +521,6 @@ addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 			anim: isRunning ? "Run" : "Idle", // ✅ add this
 		});
 
-		localPlayer.healthBar.updateFromObject(
-			localPlayer.model,
-			camera,
-			2.2
-		);
 		//localPlayer.updatePhysics(ground);
 		if (localPlayer?.model) {
 			//localPlayer.updatePhysics(ground);
@@ -491,7 +543,11 @@ addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 
 				enemy.update(delta);
 				//enemy.updatePhysics(ground);
-
+				enemy.healthBar.updateFromObject(
+					enemy.model,
+					camera,
+					0.7
+				);
 				if (
 					localPlayer.isPunching &&
 					!localPlayer.hitCooldown
@@ -552,15 +608,96 @@ addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 
 		renderer.shadowMap.enabled = true;
 		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+		// if (localPlayer?.model) {
+		// 	const playerPos =
+		// 		localPlayer.model.position.clone();
+		// 	const targetPos = playerPos
+		// 		.clone()
+		// 		.add(cameraOffset);
+
+		// 	// Smooth camera follow (optional)
+		// 	camera.position.lerp(targetPos, 0.1); // Smooth interpolation
+		// 	// camera.lookAt(playerPos);
+		// }
+
+		controls.update();
+		localPlayer.healthBar.updateFromObject(
+			localPlayer.model,
+			camera,
+			2.2
+		);
+		for (const id in remotePlayers) {
+			const enemy = remotePlayers[id];
+			if (!enemy?.model) continue;
+
+			// Always update their health bar position
+			enemy.healthBar.updateFromObject(
+				enemy.model,
+				camera,
+				0.7
+			);
+		}
+
 		renderer.render(scene, camera);
 		labelRenderer.render(scene, camera);
-
 	}
 
-	
 	animate();
+	function chooseTargetByMinimax(
+		aiPosition: THREE.Vector3
+	): { id: string; score: number } | null {
+		let bestTarget: { id: string; score: number } | null = null;
 
-	
+		for (const id in remotePlayers) {
+			const enemy = remotePlayers[id];
+			if (!enemy?.model || enemy.healthBar.isDead())
+				continue;
+
+			const targetHealth =
+				enemy.healthBar.currentHealth;
+			const distance = aiPosition.distanceTo(
+				enemy.model.position
+			);
+			const distancePenalty = distance * 2; // tweak as needed
+
+			// Minimax-inspired score
+			const score =
+				100 - targetHealth - distancePenalty;
+
+			if (!bestTarget || score > bestTarget.score) {
+				bestTarget = { id, score };
+			}
+		}
+
+		return bestTarget;
+	}
+
+	function updatePlayerInfo() {
+		if (!localPlayer?.model) return;
+
+		const target = chooseTargetByMinimax(
+			localPlayer.model.position
+		);
+
+		if (target) {
+			const enemy = remotePlayers[target.id];
+			document.getElementById(
+				"playerInfo"
+			)!.textContent = `🎯 You should punch: ${enemy.playerName} | Health: ${enemy.healthBar.currentHealth}`;
+			document.getElementById(
+				"playerInfo"
+			)!.style.display = "block";
+		} else {
+			document.getElementById(
+				"playerInfo"
+			)!.style.display = "none";
+		}
+	}
+
+	// Check for players joining every 2 seconds
+	setTimeout(updatePlayerInfo, 5000);
+	setInterval(updatePlayerInfo, 2000);
 	socket.on("action", ({ id, type }) => {
 		const player =
 			id === socket.id
@@ -570,13 +707,9 @@ addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
 		if (!player) return;
 
 		if (type === "punch") {
-			console.log(
-				"▶️ Playing punch animation for:",
-				id
-			); // ✅ DEBUG
-			player.punch(); // ✅ Play punch animation
+			player.punch();
+			if (punchSound.isPlaying) punchSound.stop();
+			punchSound.play();
 		}
 	});
 }
-
-
