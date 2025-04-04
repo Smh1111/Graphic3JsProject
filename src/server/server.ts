@@ -16,11 +16,17 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-// 🔥 Serve static frontend (built by Vite)
-app.use(express.static(path.join(__dirname, "public")));
 
+const __dirname = path.resolve();
+
+
+// ✅ Serve Vite build
+const clientPath = path.join(__dirname, "dist/client");
+app.use(express.static(clientPath));
+
+// ✅ Handle SPA routing fallback
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/index.html"));
+  res.sendFile(path.join(clientPath, "index.html"));
 });
 
 server.listen(PORT, () => {
