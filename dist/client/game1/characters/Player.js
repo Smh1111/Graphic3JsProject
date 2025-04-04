@@ -1,44 +1,8 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Player = void 0;
-const THREE = __importStar(require("three"));
-const GLTFLoader_1 = require("three/examples/jsm/loaders/GLTFLoader");
-const HealthBar_1 = require("../System/HealthBar");
-const CSS2DRenderer_1 = require("three/examples/jsm/renderers/CSS2DRenderer");
-class Player {
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { HealthBar } from "../System/HealthBar";
+import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
+export class Player {
     constructor(scene) {
         this.scene = scene;
         this.actions = {};
@@ -46,7 +10,7 @@ class Player {
         this.hitCooldown = false;
         this.velocity = new THREE.Vector3(0, -0.01, 0);
         this.gravity = -0.03;
-        this.healthBar = new HealthBar_1.HealthBar(document.body, 100);
+        this.healthBar = new HealthBar(document.body, 100);
         this.healthBar.setPosition(20, 20);
     }
     setHealth(health) {
@@ -68,7 +32,7 @@ class Player {
         this.model.position.set(x, y, z);
     }
     async load(path) {
-        const loader = new GLTFLoader_1.GLTFLoader();
+        const loader = new GLTFLoader();
         const gltf = await loader.loadAsync(path);
         this.model = gltf.scene;
         this.model.scale.set(1, 1, 1);
@@ -164,7 +128,6 @@ class Player {
         return modelBottomY <= groundTopY + 0.01;
     }
 }
-exports.Player = Player;
 function addPlayerNameTag(model, name) {
     const nameDiv = document.createElement("div");
     nameDiv.className = "player-label";
@@ -174,7 +137,7 @@ function addPlayerNameTag(model, name) {
     nameDiv.style.background = "rgba(0, 0, 0, 0.5)";
     nameDiv.style.padding = "2px 5px";
     nameDiv.style.borderRadius = "5px";
-    const nameLabel = new CSS2DRenderer_1.CSS2DObject(nameDiv);
+    const nameLabel = new CSS2DObject(nameDiv);
     nameLabel.position.set(0, 1.8, 0); // Y position matters!
     model.add(nameLabel); // Must attach to player model
 }

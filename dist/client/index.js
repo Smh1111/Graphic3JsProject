@@ -1,47 +1,9 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const THREE = __importStar(require("three"));
-const OrbitControls_1 = require("three/examples/jsm/controls/OrbitControls");
-const Player_1 = require("./game1/characters/Player");
-const Box_1 = require("./game1/utils/Box");
-const socket_io_client_1 = __importDefault(require("socket.io-client"));
-const CSS2DRenderer_js_1 = require("three/examples/jsm/renderers/CSS2DRenderer.js");
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { Player } from "./game1/characters/Player";
+import { Box } from "./game1/utils/Box";
+import io from "socket.io-client";
+import { CSS2DRenderer, CSS2DObject, } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 const keys = {
     w: { pressed: false },
     a: { pressed: false },
@@ -49,7 +11,7 @@ const keys = {
     d: { pressed: false },
 };
 let lastSentAnim = "";
-const labelRenderer = new CSS2DRenderer_js_1.CSS2DRenderer();
+const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize(window.innerWidth, window.innerHeight);
 labelRenderer.domElement.style.position = "absolute";
 labelRenderer.domElement.style.top = "0px";
@@ -64,7 +26,7 @@ function addPlayerNameTag(model, name) {
     nameDiv.style.background = "rgba(0, 0, 0, 0.5)";
     nameDiv.style.padding = "2px 5px";
     nameDiv.style.borderRadius = "5px";
-    const nameLabel = new CSS2DRenderer_js_1.CSS2DObject(nameDiv);
+    const nameLabel = new CSS2DObject(nameDiv);
     nameLabel.position.set(0, 1.8, 0);
     model.add(nameLabel);
 }
@@ -129,7 +91,7 @@ async function startGame(playerName, avatarName) {
     let lastX = 0;
     let lastZ = 0;
     let lastSentAnim = "";
-    const socket = (0, socket_io_client_1.default)();
+    const socket = io();
     socket.on("connect", () => {
         console.log("✅ Connected to server with ID:", socket.id);
     });
@@ -186,25 +148,25 @@ async function startGame(playerName, avatarName) {
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     // Ground (Arena Floor)
-    const ground = new Box_1.Box(20, 0.5, 20, "#226622", // Dark red (like a battle ring)
+    const ground = new Box(20, 0.5, 20, "#226622", // Dark red (like a battle ring)
     new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.3, 0));
     ground.receiveShadow = true;
     scene.add(ground);
     // Left Wall (Rusty Metal Look)
-    const leftWall = new Box_1.Box(0.5, 5, 20, "#3B3B3B", // Dark gray, like a steel wall
+    const leftWall = new Box(0.5, 5, 20, "#3B3B3B", // Dark gray, like a steel wall
     new THREE.Vector3(0, 0, 0), new THREE.Vector3(-10, 0, 0));
     leftWall.receiveShadow = true;
     scene.add(leftWall);
     // Right Wall (Same as Left Wall)
-    const rightWall = new Box_1.Box(0.5, 5, 20, "#3B3B3B", new THREE.Vector3(0, 0, 0), new THREE.Vector3(10, 0, 0));
+    const rightWall = new Box(0.5, 5, 20, "#3B3B3B", new THREE.Vector3(0, 0, 0), new THREE.Vector3(10, 0, 0));
     rightWall.receiveShadow = true;
     scene.add(rightWall);
     // Back Wall (Optional - Closes the Arena)
-    const backWall = new Box_1.Box(20, 5, 0.5, "#3B3B3B", new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -10));
+    const backWall = new Box(20, 5, 0.5, "#3B3B3B", new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -10));
     backWall.receiveShadow = true;
     scene.add(backWall);
     // Front Fence (Optional - Open Cage Look)
-    const frontFence = new Box_1.Box(20, 2.5, 0.2, "#777777", // Gray (represents metal bars)
+    const frontFence = new Box(20, 2.5, 0.2, "#777777", // Gray (represents metal bars)
     new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 10));
     frontFence.receiveShadow = true;
     scene.add(frontFence);
@@ -224,7 +186,7 @@ async function startGame(playerName, avatarName) {
     const leaves2 = leaves1.clone();
     leaves2.position.set(8, 1.5, -8);
     scene.add(leaves2);
-    const controls = new OrbitControls_1.OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; // Smooth motion
     controls.dampingFactor = 0.05;
     controls.enablePan = false; // Disable panning
@@ -239,7 +201,7 @@ async function startGame(playerName, avatarName) {
     dirLight.castShadow = true;
     scene.add(dirLight);
     // ---------------------------------------------------------------------------------------------
-    const localPlayer = new Player_1.Player(scene);
+    const localPlayer = new Player(scene);
     const avatarNamePath = "/3D_objects/characters/male/gltf/" + avatarName + ".gltf";
     await localPlayer.load(avatarNamePath);
     localPlayer.playerName = playerName; // 👈 Set name here
@@ -350,7 +312,7 @@ async function startGame(playerName, avatarName) {
         }
     });
     async function createRemotePlayer(id, x, z, avatarName, playerName) {
-        const newP = new Player_1.Player(scene);
+        const newP = new Player(scene);
         newP.playerName = playerName; // 👈 Set name here
         await newP
             .load("/3D_objects/characters/male/gltf/" +

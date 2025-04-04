@@ -1,27 +1,22 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const http_1 = __importDefault(require("http"));
-const path_1 = __importDefault(require("path"));
-const socket_io_1 = require("socket.io");
-const app = (0, express_1.default)();
-const server = http_1.default.createServer(app);
-const io = new socket_io_1.Server(server, {
+import express from "express";
+import http from "http";
+import path from "path";
+import { Server } from "socket.io";
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
     cors: {
         origin: "*", // during dev
     },
 });
 const PORT = process.env.PORT || 3000;
-const __dirname = path_1.default.resolve();
+const __dirname = path.resolve();
 // ✅ Serve Vite build
-const clientPath = path_1.default.join(__dirname, "dist/client");
-app.use(express_1.default.static(clientPath));
+const clientPath = path.join(__dirname, "dist/client");
+app.use(express.static(clientPath));
 // ✅ Handle SPA routing fallback
 app.get("*", (req, res) => {
-    res.sendFile(path_1.default.join(clientPath, "index.html"));
+    res.sendFile(path.join(clientPath, "index.html"));
 });
 server.listen(PORT, () => {
     console.log(`✅ Server running at http://localhost:${PORT}`);
