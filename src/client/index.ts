@@ -4,12 +4,11 @@ import { Player } from "./game1/characters/Player";
 import { GameState } from "./game1/utils/GameState";
 import { Box } from "./game1/utils/Box";
 import io from "socket.io-client";
+import {
+	CSS2DRenderer,
+	CSS2DObject,
+} from "three/examples/jsm/renderers/CSS2DRenderer.js";
 
-// Avatar map: type → model path
-const avatarMap: Record<string, string> = {
-	adventurer: "Adventurer",
-	knight: "Knight",
-};
 const keys: Record<string, { pressed: boolean }> = {
 	w: { pressed: false },
 	a: { pressed: false },
@@ -17,33 +16,92 @@ const keys: Record<string, { pressed: boolean }> = {
 	d: { pressed: false },
 };
 
-let selectedType: string;
-
-// 👇 Wait for avatar selection BEFORE starting the game
-document.querySelectorAll(".avatar-btn").forEach((btn) => {
-	btn.addEventListener("click", (e) => {
-		const target = e.currentTarget as HTMLButtonElement;
-
-		// Make sure the button has the text content (avatar name)
-		const avatarName = target.textContent?.trim(); // .trim() removes whitespace
-		console.log("avatarName ", avatarName);
-
-		if (!avatarName) {
-			console.error("Avatar name is empty!");
-			return;
-		}
-
-		// Hide UI
-		document.getElementById("avatar-screen")!.style.display =
-			"none";
-
-		// Start game AFTER avatar chosen
-		startGame(avatarName);
-	});
-});
 let lastSentAnim = "";
 
-async function startGame(avatarName: string) {
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position = "absolute";
+labelRenderer.domElement.style.top = "0px";
+labelRenderer.domElement.style.pointerEvents = "none"; // 🔥 Fix added here
+document.body.appendChild(labelRenderer.domElement);
+
+
+function addPlayerNameTag(model: THREE.Object3D, name: string): void {
+	const nameDiv = document.createElement("div");
+	nameDiv.className = "player-label";
+	nameDiv.textContent = name;
+	nameDiv.style.color = "white";
+	nameDiv.style.fontSize = "12px";
+	nameDiv.style.background = "rgba(0, 0, 0, 0.5)";
+	nameDiv.style.padding = "2px 5px";
+	nameDiv.style.borderRadius = "5px";
+
+	const nameLabel = new CSS2DObject(nameDiv);
+	nameLabel.position.set(0, 1.8, 0);
+	model.add(nameLabel);
+}
+
+// Wait for user input before starting the game
+document.getElementById("startGameButton")?.addEventListener("click", () => {
+	const playerNameInput = document.getElementById(
+		"playerName"
+	) as HTMLInputElement;
+	const characterChoiceInput = document.getElementById(
+		"characterChoice"
+	) as HTMLSelectElement;
+
+	if (playerNameInput && characterChoiceInput) {
+		const playerName = playerNameInput.value;
+		const avatarName = characterChoiceInput.value;
+
+		// Hide selection UI
+		document.getElementById("playerSelection")?.setAttribute(
+			"style",
+			"display: none;"
+		);
+
+		document.getElementById("chatContainer")?.setAttribute(
+			"style",
+			"display: block;"
+		);
+
+		// Start the game with selected character
+		
+		startGame(playerName, avatarName);
+		playStartSound(); // Play sound when game starts
+	}
+});
+
+// Create an audio listener (needed for sound)
+const listener = new THREE.AudioListener();
+// Load sound file
+const sound = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+audioLoader.load("game1/sound/epic-hybrid-logo-157092.mp3", (buffer) => {
+	sound.setBuffer(buffer);
+	sound.setLoop(false); // Play once
+	sound.setVolume(0.8); // Adjust volume
+});
+
+// Function to play sound
+function playStartSound() {
+	if (sound.isPlaying) {
+		sound.stop(); // Stop previous sound if playing
+	}
+	sound.play(); // Play sound
+}
+
+
+// Chat functionality
+const chatMessages = document.getElementById("chatMessages") as HTMLDivElement;
+const chatInput = document.getElementById("chatInput") as HTMLInputElement;
+const sendMessageButton = document.getElementById("sendMessageButton") as HTMLButtonElement;
+
+
+
+    
+    
+async function startGame(playerName: string, avatarName: string) {
 	let lastX = 0;
 	let lastZ = 0;
 	let lastSentAnim = "";
@@ -64,12 +122,38 @@ async function startGame(avatarName: string) {
 				remotePlayerData.id,
 				remotePlayerData.x,
 				remotePlayerData.y,
-				remotePlayerData.avatarName
+				remotePlayerData.avatarName,
+				remotePlayerData.playerName
 			);
 		}
 	});
+	sendMessageButton.addEventListener("click", sendMessage);
+chatInput.addEventListener("keypress", (e) => {
+	if (e.key === "Enter") sendMessage();
+});
 
-	let playerId: string;
+	function sendMessage() {
+		if (chatInput.value.trim() === "") return;
+	
+		const message = chatInput.value.trim();
+	
+		// Emit to server
+		socket.emit("chat-message", {
+			name: playerName,
+			message,
+		});
+	
+		chatInput.value = "";
+	}
+	socket.on("chat-message", ({ name, message }) => {
+		const messageDiv = document.createElement("div");
+		messageDiv.textContent = `${name}: ${message}`;
+		chatMessages.appendChild(messageDiv);
+		chatMessages.scrollTop = chatMessages.scrollHeight;
+	});
+	
+
+	//let playerId: string;
 	const remotePlayers: Record<string, Player> = {};
 
 	const scene = new THREE.Scene();
@@ -82,6 +166,7 @@ async function startGame(avatarName: string) {
 		1000
 	);
 	camera.position.set(0, 2, 5);
+	camera.add(listener); // Attach to camera
 
 	const renderer = new THREE.WebGLRenderer({
 		alpha: true,
@@ -90,16 +175,89 @@ async function startGame(avatarName: string) {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	document.body.appendChild(renderer.domElement);
 
+	// Ground (Arena Floor)
 	const ground = new Box(
 		20,
 		0.5,
 		20,
-		"#226622",
+		"#226622", // Dark red (like a battle ring)
 		new THREE.Vector3(0, 0, 0),
-		new THREE.Vector3(0, 0, 0)
+		new THREE.Vector3(0, -0.3, 0)
 	);
 	ground.receiveShadow = true;
 	scene.add(ground);
+
+	// Left Wall (Rusty Metal Look)
+	const leftWall = new Box(
+		0.5,
+		5,
+		20,
+		"#3B3B3B", // Dark gray, like a steel wall
+		new THREE.Vector3(0, 0, 0),
+		new THREE.Vector3(-10, 0, 0)
+	);
+	leftWall.receiveShadow = true;
+	scene.add(leftWall);
+
+	// Right Wall (Same as Left Wall)
+	const rightWall = new Box(
+		0.5,
+		5,
+		20,
+		"#3B3B3B",
+		new THREE.Vector3(0, 0, 0),
+		new THREE.Vector3(10, 0, 0)
+	);
+	rightWall.receiveShadow = true;
+	scene.add(rightWall);
+
+	// Back Wall (Optional - Closes the Arena)
+	const backWall = new Box(
+		20,
+		5,
+		0.5,
+		"#3B3B3B",
+		new THREE.Vector3(0, 0, 0),
+		new THREE.Vector3(0, 0, -10)
+	);
+	backWall.receiveShadow = true;
+	scene.add(backWall);
+
+	// Front Fence (Optional - Open Cage Look)
+	const frontFence = new Box(
+		20,
+		2.5,
+		0.2,
+		"#777777", // Gray (represents metal bars)
+		new THREE.Vector3(0, 0, 0),
+		new THREE.Vector3(0, 0, 10)
+	);
+	frontFence.receiveShadow = true;
+	scene.add(frontFence);
+
+	// Tree 1 (Left Side)
+	const trunk1 = new THREE.Mesh(
+		new THREE.CylinderGeometry(0.3, 0.3, 3, 10),
+		new THREE.MeshStandardMaterial({ color: "#8B5A2B" }) // Brown trunk
+	);
+	trunk1.position.set(-8, -0.5, -8);
+	scene.add(trunk1);
+
+	const leaves1 = new THREE.Mesh(
+		new THREE.SphereGeometry(1.5, 10, 10),
+		new THREE.MeshStandardMaterial({ color: "#2E8B57" }) // Green leaves
+	);
+	leaves1.position.set(-8, 1.5, -8);
+	scene.add(leaves1);
+
+	// Tree 2 (Right Side)
+	const trunk2 = trunk1.clone();
+	trunk2.position.set(8, -0.5, -8);
+	scene.add(trunk2);
+
+	const leaves2 = leaves1.clone();
+	leaves2.position.set(8, 1.5, -8);
+	scene.add(leaves2);
 
 	new OrbitControls(camera, renderer.domElement);
 
@@ -112,13 +270,21 @@ async function startGame(avatarName: string) {
 	dirLight.castShadow = true;
 	scene.add(dirLight);
 
+	// ---------------------------------------------------------------------------------------------
+
 	const localPlayer = new Player(scene);
 
 	const avatarNamePath =
 		"/3D_objects/characters/male/gltf/" + avatarName + ".gltf";
 
 	await localPlayer.load(avatarNamePath);
-	socket.emit("player-creation", avatarName);
+	
+addPlayerNameTag(localPlayer.model, playerName); // 👈 right here
+
+
+	
+	
+	socket.emit("player-creation", {avatarName, playerName});
 
 	socket.on("existing-players", (players) => {
 		console.log("Received existing players:", players); // 👈 debug log
@@ -130,7 +296,8 @@ async function startGame(avatarName: string) {
 					p.id,
 					p.x,
 					p.z,
-					p.avatarName
+					p.avatarName,
+					p.playerName
 				);
 			}
 		}
@@ -247,7 +414,8 @@ async function startGame(avatarName: string) {
 		id: string,
 		x: number,
 		z: number,
-		avatarName: string
+		avatarName: string,
+		playerName: string
 	) {
 		const newP = new Player(scene);
 		await newP
@@ -267,10 +435,13 @@ async function startGame(avatarName: string) {
 					0.7
 				);
 			});
+
+			addPlayerNameTag(newP.model, playerName); 
 	}
 
 	const clock = new THREE.Clock();
 	function animate() {
+		
 		requestAnimationFrame(animate);
 		const delta = clock.getDelta();
 
@@ -382,9 +553,14 @@ async function startGame(avatarName: string) {
 		renderer.shadowMap.enabled = true;
 		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		renderer.render(scene, camera);
+		labelRenderer.render(scene, camera);
+
 	}
 
+	
 	animate();
+
+	
 	socket.on("action", ({ id, type }) => {
 		const player =
 			id === socket.id
@@ -402,3 +578,5 @@ async function startGame(avatarName: string) {
 		}
 	});
 }
+
+

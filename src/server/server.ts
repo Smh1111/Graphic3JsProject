@@ -20,6 +20,7 @@ const playersListOnServer: Record<
 	{
 		id: string;
 		avatarName: string;
+		playerName: string;
 		x: number;
 		z: number;
 		health: number;
@@ -30,11 +31,12 @@ const playersListOnServer: Record<
 io.on("connection", (socket) => {
 	console.log("Socket connected:", socket.id);
 	// 🔥 Wait for avatar info before adding to player list
-	socket.on("player-creation", (avatarName) => {
+	socket.on("player-creation", ({avatarName, playerName}) => {
 		// Re-add or update the player
 		playersListOnServer[socket.id] = {
 			id: socket.id,
 			avatarName,
+			playerName,
 			x: 0,
 			z: 0,
 			health: 100,
@@ -123,6 +125,15 @@ io.on("connection", (socket) => {
 		delete playersListOnServer[socket.id];
 		io.emit("remove-player", socket.id);
 	});
+
+	socket.on("chat-message", ({ name, message }) => {
+		io.emit("chat-message", {
+			id: socket.id,
+			name,
+			message,
+		});
+	});
+	
 });
 
 server.listen(3000, () =>

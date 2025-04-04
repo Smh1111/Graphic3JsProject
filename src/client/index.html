@@ -4,28 +4,114 @@
     <meta charset="UTF-8" />
     <title>Multiplayer Game</title>
   </head>
-  <body>
-    <div id="avatar-screen" style="
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: #111;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-">
-  <h2>Choose Your Avatar</h2>
-  <div style="display: flex; gap: 2rem; margin-top: 1rem;">
-    <button class="avatar-btn" data-type="Adventurer" style="padding: 1rem 2rem; font-size: 1.2rem;">Adventurer</button>
-    <button class="avatar-btn" data-type="King" style="padding: 1rem 2rem; font-size: 1.2rem;">King</button>
-  </div>
-</div>
 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      color: #333;
+    }
+    #playerSelection {
+      margin-bottom: 20px;
+      z-index: 10;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input[type="text"],
+    select {
+      width: 200px;
+      padding: 8px;
+      margin-bottom: 10px;
+
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .playerSelection {
+      border-radius: 1rem;
+      background-color: #fff;
+      padding: 30px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      margin: 15rem auto;
+     
+    }
+
+    .chat-container {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 300px;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      font-family: Arial, sans-serif;
+      border-radius: 5px;
+    }
+    .chat-messages {
+      height: 150px;
+      overflow-y: auto;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+    #chatInput {
+      width: 70%;
+      padding: 5px;
+    }
+    #sendMessageButton {
+      padding: 5px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      border: none;
+    }
+
+
+          
+  </style>
+  <body>
+    <!-- Form to collect player name and character choice -->
+    <div id="playerSelection" class="playerSelection">
+      <h2>Welcome to the Game!</h2>
+      <label for="playerName">Enter your name:</label>
+      <input type="text" id="playerName" placeholder="Your Name" />
+      
+      <label for="characterChoice">Choose your character:</label>
+      <select id="characterChoice">
+        <option value="Farmer">Farmer</option>
+        <option value="King">King</option>
+        <option value="Adventurer">Adventurer</option>
+        <option value="Punk">Punk</option>
+        <option value="Swat">Swat</option>
+        <option value="Casual_Hoodie">Street Boy</option>
+        <option value="Casual_2">Street Boy 2</option>
+      </select>
+      
+      <button id="startGameButton">Join the Game</button>
+    </div>
+
+    <div id="playerInfo" style="display: none; font-weight: bold; font-size: 16px; margin-bottom: 10px; color: red;"></div>
+
+    <div id="chatContainer" class="chat-container" style="display: none;">
+      <div id="chatMessages" class="chat-messages"></div>
+      <input type="text" id="chatInput" placeholder="Type a message..." />
+      <button id="sendMessageButton">Send</button>
+    </div>
     <canvas class="webgl"></canvas>
     <script type="module" src="/index.ts"></script>
   </body>
