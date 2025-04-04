@@ -15,10 +15,13 @@ const io = new socket_io_1.Server(server, {
     },
 });
 const PORT = process.env.PORT || 3000;
-// 🔥 Serve static frontend (built by Vite)
-app.use(express_1.default.static(path_1.default.join(__dirname, "../client")));
+const __dirname = path_1.default.resolve();
+// ✅ Serve Vite build
+const clientPath = path_1.default.join(__dirname, "dist/client");
+app.use(express_1.default.static(clientPath));
+// ✅ Handle SPA routing fallback
 app.get("*", (req, res) => {
-    res.sendFile(path_1.default.join(__dirname, "../client/index.html"));
+    res.sendFile(path_1.default.join(clientPath, "index.html"));
 });
 server.listen(PORT, () => {
     console.log(`✅ Server running at http://localhost:${PORT}`);

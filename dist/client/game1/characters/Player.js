@@ -39,18 +39,13 @@ const GLTFLoader_1 = require("three/examples/jsm/loaders/GLTFLoader");
 const HealthBar_1 = require("../System/HealthBar");
 const CSS2DRenderer_1 = require("three/examples/jsm/renderers/CSS2DRenderer");
 class Player {
-    scene;
-    model;
-    mixer;
-    actions = {};
-    activeAction;
-    healthBar;
-    isPunching = false;
-    socketID;
-    hitCooldown = false;
-    playerName;
     constructor(scene) {
         this.scene = scene;
+        this.actions = {};
+        this.isPunching = false;
+        this.hitCooldown = false;
+        this.velocity = new THREE.Vector3(0, -0.01, 0);
+        this.gravity = -0.03;
         this.healthBar = new HealthBar_1.HealthBar(document.body, 100);
         this.healthBar.setPosition(20, 20);
     }
@@ -141,8 +136,6 @@ class Player {
             this.activeAction.reset().fadeIn(0.2).play();
         }
     }
-    velocity = new THREE.Vector3(0, -0.01, 0);
-    gravity = -0.03;
     // updatePhysics(ground: Box) {
     //   if (!this.model) return;
     //   this.velocity.y += this.gravity;

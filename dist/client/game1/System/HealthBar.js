@@ -36,10 +36,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthBar = void 0;
 const THREE = __importStar(require("three"));
 class HealthBar {
-    container;
-    bar;
-    maxHealth;
-    currentHealth;
     constructor(parent, maxHealth = 100) {
         this.maxHealth = maxHealth;
         this.currentHealth = maxHealth;

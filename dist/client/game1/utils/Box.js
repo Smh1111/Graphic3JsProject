@@ -37,18 +37,6 @@ exports.Box = void 0;
 exports.boxCollision = boxCollision;
 const THREE = __importStar(require("three"));
 class Box extends THREE.Mesh {
-    velocity;
-    gravity;
-    zAcceleration;
-    width;
-    height;
-    depth;
-    right;
-    left;
-    bottom;
-    top;
-    front;
-    back;
     constructor(width, height, depth, color, velocity, position, zAcceleration = false) {
         super(new THREE.BoxGeometry(width, height, depth), new THREE.MeshStandardMaterial({ color }));
         this.width = width;

@@ -36,10 +36,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GravityHandler = void 0;
 const THREE = __importStar(require("three"));
 class GravityHandler {
-    velocity = new THREE.Vector3(0, 0, 0);
-    gravity;
-    maxFallSpeed;
     constructor(options = {}) {
+        this.velocity = new THREE.Vector3(0, 0, 0);
         this.gravity = options.gravity ?? -0.015;
         this.maxFallSpeed = options.maxFallSpeed ?? -0.5;
     }
