@@ -41,14 +41,17 @@ document.querySelectorAll(".avatar-btn").forEach((btn) => {
 		startGame(avatarName);
 	});
 });
+let lastSentAnim = "";
 
 async function startGame(avatarName: string) {
+	let lastX = 0;
+	let lastZ = 0;
+	let lastSentAnim = "";
+
 	const socket = io("http://localhost:3000");
 
 	socket.on("connect", () => {
 		console.log("✅ Connected to server with ID:", socket.id);
-
-		
 	});
 	socket.on("new-remote-player", (remotePlayerData) => {
 		console.log("👥 New player joined:", remotePlayerData);
@@ -98,8 +101,6 @@ async function startGame(avatarName: string) {
 	ground.receiveShadow = true;
 	scene.add(ground);
 
-
-
 	new OrbitControls(camera, renderer.domElement);
 
 	const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
@@ -117,7 +118,7 @@ async function startGame(avatarName: string) {
 		"/3D_objects/characters/male/gltf/" + avatarName + ".gltf";
 
 	await localPlayer.load(avatarNamePath);
-  socket.emit("player-creation", avatarName);
+	socket.emit("player-creation", avatarName);
 
 	socket.on("existing-players", (players) => {
 		console.log("Received existing players:", players); // 👈 debug log
@@ -135,19 +136,19 @@ async function startGame(avatarName: string) {
 		}
 	});
 
-  // Show world axes
-scene.add(new THREE.AxesHelper(200));
+	// Show world axes
+	scene.add(new THREE.AxesHelper(200));
 
-// Show player bounding box
-const playerBox = new THREE.Box3().setFromObject(localPlayer.model);
-const playerBoxHelper = new THREE.Box3Helper(playerBox, 0xff0000);
-scene.add(playerBoxHelper);
+	// Show player bounding box
+	const playerBox = new THREE.Box3().setFromObject(localPlayer.model);
+	const playerBoxHelper = new THREE.Box3Helper(playerBox, 0xff0000);
+	scene.add(playerBoxHelper);
 
-// Show ground bounding box
-const groundBox = new THREE.Box3().setFromObject(ground);
-const groundHelper = new THREE.Box3Helper(groundBox, 0x00ff45);
-scene.add(groundHelper);
-  
+	// Show ground bounding box
+	const groundBox = new THREE.Box3().setFromObject(ground);
+	const groundHelper = new THREE.Box3Helper(groundBox, 0x00ff45);
+	scene.add(groundHelper);
+
 	window.addEventListener("keydown", (e) => {
 		if (e.code === "Space") {
 			localPlayer.punch();
@@ -162,55 +163,85 @@ scene.add(groundHelper);
 		if (keys[e.key]) keys[e.key].pressed = false;
 	});
 
-  
-	
+	socket.on("move", ({ id, x, z, rotationY, anim }) => {
+		const remote = remotePlayers[id];
+		if (remote) {
+			remote.setPosition(x, 0, z);
+			remote.model.rotation.y = rotationY;
 
-	
-  
-  socket.on("move", ({ id, x, z }) => {
-    const remote = remotePlayers[id];
-    if (remote) {
-      remote.setPosition(x, 0, z); // or use .model.position.set(...)
-    }
-  });
-  socket.emit("move", {
-    x: localPlayer.model.position.x,
-    z: localPlayer.model.position.z,
-  });
+			// ✅ Play the animation the sender is in
+			if (anim) {
+				remote.playAnimation(anim);
+			}
+		}
+	});
 
-  socket.on("update-health", ({ id, health }) => {
-    const target = id === socket.id ? localPlayer : remotePlayers[id];
-  
-    if (target) {
-      target.setHealth(health);
-  
-      // ✅ If this is the local player and they're dead
-      if (id === socket.id && target.healthBar.isDead()) {
-        scene.remove(target.model);
-        target.healthBar.destroy(); // 💀 Remove UI from DOM
-      }
-  
-      // ✅ If remote player is dead
-      if (id !== socket.id && target.healthBar.isDead()) {
-        scene.remove(target.model);
-        target.healthBar.destroy(); // Remove remote UI
-        delete remotePlayers[id];
-      }
-    }
-  });
-  
-  
-  
-  socket.on("remove-player", (id) => {
-    if (remotePlayers[id]) {
-      scene.remove(remotePlayers[id].model);
-      remotePlayers[id].healthBar.destroy();
-      delete remotePlayers[id];
-    }
-  });
-  
-    
-  
+	const isRunning =
+		keys.w.pressed ||
+		keys.a.pressed ||
+		keys.s.pressed ||
+		keys.d.pressed;
+
+	const currentX = localPlayer.model.position.x;
+	const currentZ = localPlayer.model.position.z;
+	const currentRotationY = localPlayer.model.rotation.y;
+	const currentAnim = isRunning ? "Run" : "Idle";
+
+	// 🧠 Emit only if movement or animation changed
+	if (
+		currentX !== lastX ||
+		currentZ !== lastZ ||
+		currentAnim !== lastSentAnim
+	) {
+		socket.emit("move", {
+			x: currentX,
+			z: currentZ,
+			rotationY: currentRotationY,
+			anim: currentAnim,
+		});
+
+		lastX = currentX;
+		lastZ = currentZ;
+		lastSentAnim = currentAnim;
+	}
+
+	socket.on("update-health", ({ id, health }) => {
+		const target =
+			id === socket.id
+				? localPlayer
+				: remotePlayers[id];
+
+		if (target) {
+			target.setHealth(health);
+
+			// ✅ If this is the local player and they're dead
+			if (
+				id === socket.id &&
+				target.healthBar.isDead()
+			) {
+				scene.remove(target.model);
+				target.healthBar.destroy(); // 💀 Remove UI from DOM
+			}
+
+			// ✅ If remote player is dead
+			if (
+				id !== socket.id &&
+				target.healthBar.isDead()
+			) {
+				scene.remove(target.model);
+				target.healthBar.destroy(); // Remove remote UI
+				delete remotePlayers[id];
+			}
+		}
+	});
+
+	socket.on("remove-player", (id) => {
+		if (remotePlayers[id]) {
+			scene.remove(remotePlayers[id].model);
+			remotePlayers[id].healthBar.destroy();
+			delete remotePlayers[id];
+		}
+	});
 
 	async function createRemotePlayer(
 		id: string,
@@ -244,12 +275,29 @@ scene.add(groundHelper);
 		const delta = clock.getDelta();
 
 		localPlayer.move(keys);
-    socket.emit("move", {
-      x: localPlayer.model.position.x,
-      z: localPlayer.model.position.z,
-    });
-    
 		localPlayer.update(delta);
+		for (const id in remotePlayers) {
+			remotePlayers[id].update(delta); // 🔥 THIS LINE IS THE FIX
+		}
+
+		const isRunning =
+			keys.w.pressed ||
+			keys.a.pressed ||
+			keys.s.pressed ||
+			keys.d.pressed;
+
+		socket.emit("move", {
+			x: localPlayer.model.position.x,
+			z: localPlayer.model.position.z,
+			rotationY: localPlayer.model.rotation.y,
+			anim: isRunning ? "Run" : "Idle", // ✅ add this
+		});
+
+		localPlayer.healthBar.updateFromObject(
+			localPlayer.model,
+			camera,
+			2.2
+		);
 		//localPlayer.updatePhysics(ground);
 		if (localPlayer?.model) {
 			//localPlayer.updatePhysics(ground);
@@ -260,47 +308,75 @@ scene.add(groundHelper);
 				2.2
 			);
 		}
-    
+
 		if (localPlayer.isPunching) {
 			const playerBox = new THREE.Box3().setFromObject(
 				localPlayer.model
 			);
 
 			for (const id in remotePlayers) {
-        
 				const enemy = remotePlayers[id];
 				if (!enemy?.model) continue;
 
 				enemy.update(delta);
 				//enemy.updatePhysics(ground);
 
-				if (localPlayer.isPunching && !localPlayer.hitCooldown) {
-          const playerBox = new THREE.Box3().setFromObject(localPlayer.model);
-        
-          for (const id in remotePlayers) {
-            const enemy = remotePlayers[id];
-            if (!enemy?.model) continue;
-        
-            const enemyBox = new THREE.Box3().setFromObject(enemy.model);
-        
-            if (playerBox.intersectsBox(enemyBox)) {
-              console.log(`👊 Punch hit player ${id}`);
-        
-              socket.emit("hit", { targetId: id });
-        
-              // ✅ Prevent further hits until cooldown ends
-              localPlayer.hitCooldown = true;
-        
-              // ⏱️ Reset cooldown after 0.5 sec
-              setTimeout(() => {
-                localPlayer.hitCooldown = false;
-              }, 1200);
-        
-              break;
-            }
-          }
-        }
-      }        
+				if (
+					localPlayer.isPunching &&
+					!localPlayer.hitCooldown
+				) {
+					const playerBox =
+						new THREE.Box3().setFromObject(
+							localPlayer.model
+						);
+
+					for (const id in remotePlayers) {
+						const enemy =
+							remotePlayers[
+								id
+							];
+						if (!enemy?.model)
+							continue;
+
+						const enemyBox =
+							new THREE.Box3().setFromObject(
+								enemy.model
+							);
+
+						if (
+							playerBox.intersectsBox(
+								enemyBox
+							)
+						) {
+							console.log(
+								`👊 Punch hit player ${id}`
+							);
+
+							socket.emit(
+								"hit",
+								{
+									targetId: id,
+								}
+							);
+
+							// ✅ Prevent further hits until cooldown ends
+							localPlayer.hitCooldown =
+								true;
+
+							// ⏱️ Reset cooldown after 0.5 sec
+							setTimeout(
+								() => {
+									localPlayer.hitCooldown =
+										false;
+								},
+								1200
+							);
+
+							break;
+						}
+					}
+				}
+			}
 		}
 
 		renderer.shadowMap.enabled = true;
@@ -309,4 +385,20 @@ scene.add(groundHelper);
 	}
 
 	animate();
+	socket.on("action", ({ id, type }) => {
+		const player =
+			id === socket.id
+				? localPlayer
+				: remotePlayers[id];
+
+		if (!player) return;
+
+		if (type === "punch") {
+			console.log(
+				"▶️ Playing punch animation for:",
+				id
+			); // ✅ DEBUG
+			player.punch(); // ✅ Play punch animation
+		}
+	});
 }

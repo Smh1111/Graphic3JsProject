@@ -77,6 +77,9 @@ export class Player {
       this.actions[clip.name] = this.mixer.clipAction(clip);
     });
 
+    console.log("Loaded animations:", gltf.animations.map(c => c.name));
+
+
     this.activeAction = this.actions["Idle"];
     this.activeAction?.play();
   }
@@ -114,7 +117,7 @@ if (direction.lengthSq() > 0) {
     this.activeAction = punchAction;
   
     punchAction.reset();
-    punchAction.setLoop(THREE.LoopOnce, 1);
+    punchAction.setLoop(THREE.LoopOnce, 3);
     punchAction.clampWhenFinished = true;
     punchAction.play();
   }
@@ -152,12 +155,15 @@ if (direction.lengthSq() > 0) {
       this.mixer?.update(delta);
     
       if (this.isPunching) {
-        const punchAction = this.actions["Punch_Left"];
-        if (punchAction && punchAction.time >= punchAction.getClip().duration) {
-          this.isPunching = false;
-          this.playAnimation("Idle");
-        }
-      }
+    console.log("🔁 isPunching still active");
+
+    const punchAction = this.actions["Punch_Left"];
+    if (punchAction && punchAction.time >= punchAction.getClip().duration) {
+      console.log("✅ Punch finished, resetting to Idle");
+      this.isPunching = false;
+      this.playAnimation("Idle");
+    }
+  }
     }
 
     isOnGround(ground: Box): boolean {

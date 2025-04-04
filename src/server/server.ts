@@ -23,57 +23,74 @@ const playersListOnServer: Record<
 		x: number;
 		z: number;
 		health: number;
+		rotationY: number;
 	}
 > = {};
 
 io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id);
+	console.log("Socket connected:", socket.id);
 	// 🔥 Wait for avatar info before adding to player list
-	socket.on("player-creation", ( avatarName ) => {
-    // Re-add or update the player
-    playersListOnServer[socket.id] = {
-      id: socket.id,
-      avatarName,
-      x: 0,
-      z: 0,
-      health: 100,
-    };
-  
-    // Send existing players to the joining player
-    socket.emit("existing-players", playersListOnServer);
-  
-    // ✅ Re-broadcast player to others
-    socket.broadcast.emit("new-remote-player", playersListOnServer[socket.id]);
-  });
-  
+	socket.on("player-creation", (avatarName) => {
+		// Re-add or update the player
+		playersListOnServer[socket.id] = {
+			id: socket.id,
+			avatarName,
+			x: 0,
+			z: 0,
+			health: 100,
+			rotationY: 0,
+		};
+
+		// Send existing players to the joining player
+		socket.emit("existing-players", playersListOnServer);
+
+		// ✅ Re-broadcast player to others
+		socket.broadcast.emit(
+			"new-remote-player",
+			playersListOnServer[socket.id]
+		);
+	});
 
 	socket.on("move", (pos) => {
-    //console.log("Pos: ", pos)
-  if (playersListOnServer[socket.id]) {
-    // Update the server's player data
-    playersListOnServer[socket.id].x = pos.x;
+		//console.log("Pos: ", pos)
+		if (playersListOnServer[socket.id]) {
+			// Update the server's player data
+			playersListOnServer[socket.id].x = pos.x;
 
-    playersListOnServer[socket.id].z = pos.z;
+			playersListOnServer[socket.id].z = pos.z;
+			playersListOnServer[socket.id].rotationY =
+				pos.rotationY;
 
-    // Send to everyone *except* the sender
-    socket.broadcast.emit("move", {
-      id: socket.id,
-      x: pos.x,
+			playersListOnServer[socket.id].x = pos.x;
+			playersListOnServer[socket.id].z = pos.z;
+			playersListOnServer[socket.id].rotationY =
+				pos.rotationY;
 
-      z: pos.z,
-    });
-  }
-});
-
+			socket.broadcast.emit("move", {
+				id: socket.id,
+				x: pos.x,
+				z: pos.z,
+				rotationY: pos.rotationY,
+				anim: pos.anim, // ✅ include animation
+			});
+		}
+	});
 
 	socket.on("action", (action) => {
 		console.log("Player action:", socket.id, action);
-    const debugLine = " player:" + playersListOnServer[socket.id] + " action:" + action + " out of list:" + playersListOnServer;
-    console.log(debugLine);
+		const debugLine =
+			" player:" +
+			playersListOnServer[socket.id] +
+			" action:" +
+			action +
+			" out of list:" +
+			playersListOnServer;
+		console.log(debugLine);
 
-		if (action.type === "punch" && playersListOnServer[socket.id]) {
-		
-
+		if (
+			action.type === "punch" &&
+			playersListOnServer[socket.id]
+		) {
 			io.emit("action", {
 				id: socket.id,
 				type: "punch",
@@ -81,26 +98,25 @@ io.on("connection", (socket) => {
 		}
 	});
 
-  socket.on("hit", ({ targetId }) => {
-    const target = playersListOnServer[targetId];
-    if (!target) return;
-  
-    target.health -= 20;
-    console.log(`💥 ${targetId} was hit. New health: ${target.health}`);
-  
-    io.emit("update-health", {
-      id: targetId,
-      health: target.health,
-    });
-  
-    if (target.health <= 0) {
-      io.emit("remove-player", targetId);
-      delete playersListOnServer[targetId];
-    }
-  });
-  
-  
-  
+	socket.on("hit", ({ targetId }) => {
+		const target = playersListOnServer[targetId];
+		if (!target) return;
+
+		target.health -= 20;
+		console.log(
+			`💥 ${targetId} was hit. New health: ${target.health}`
+		);
+
+		io.emit("update-health", {
+			id: targetId,
+			health: target.health,
+		});
+
+		if (target.health <= 0) {
+			io.emit("remove-player", targetId);
+			delete playersListOnServer[targetId];
+		}
+	});
 
 	socket.on("disconnect", () => {
 		console.log("Player disconnected:", socket.id);
