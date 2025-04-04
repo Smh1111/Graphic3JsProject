@@ -126,7 +126,7 @@ async function startGame(playerName: string, avatarName: string) {
 	let lastZ = 0;
 	let lastSentAnim = "";
 
-	const socket = io("http://localhost:3000");
+	const socket = io();
 
 	socket.on("connect", () => {
 		console.log("✅ Connected to server with ID:", socket.id);
